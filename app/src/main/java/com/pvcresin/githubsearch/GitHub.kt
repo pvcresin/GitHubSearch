@@ -61,18 +61,8 @@ class GitHub(val context: Context) {
         return retrofit.create(GitHubApi::class.java)
     }
 
-    fun search(query: String, sort: String, order: String) {
-        api.searchRepositories(query, sort, order).callback(
-            onResponse = { res ->
-                val result = res?.body()
-                result?.items?.forEachIndexed { index, repo ->
-                    Log.d(TAG, "$index $repo")
-                }
-            },
-            onFailure = { t ->
-                Log.d(TAG, t.toString())
-            }
-        )
+    fun search(query: String, sort: String, order: String): Call<SearchResult> {
+        return api.searchRepositories(query, sort, order)
     }
 
     // OAuth
@@ -138,7 +128,6 @@ class GitHub(val context: Context) {
         }
     }
 
-
 }
 
 data class User(
@@ -160,7 +149,7 @@ interface GitHubApi {
     @GET("search/repositories")
     fun searchRepositories(
         @Query("q") query: String,      // search keywords
-        @Query("sort") sort: String,    // [match], starts, forks
+        @Query("sort") sort: String,    // starts, forks, updated
         @Query("order") order: String   // [desc], asc
     ): Call<SearchResult>
 }
