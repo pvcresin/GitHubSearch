@@ -2,7 +2,9 @@ package com.pvcresin.girhubsearch
 
 import android.content.Context
 import android.net.Uri
+import android.preference.PreferenceManager
 import android.support.customtabs.CustomTabsIntent
+import android.util.Log
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
@@ -14,11 +16,24 @@ import retrofit2.http.Query
 
 
 class GitHub(val context: Context) {
+    val TAG: String = this.javaClass.simpleName
+
     val clientData = ClientData(context)
 
     var oauth = initOAuth()
 
     var code = ""
+
+    val token: String
+        get() = PreferenceManager.getDefaultSharedPreferences(context).getString("token", "")
+    val tokenType: String
+        get() = PreferenceManager.getDefaultSharedPreferences(context).getString("type", "")
+    val authenticated: Boolean
+        get() = token.isEmpty()
+
+    init {
+        Log.d(TAG, "authencated: $authenticated")
+    }
 
     fun initOAuth(): GitHubOAuth {
         val httpClient = OkHttpClient.Builder()
@@ -36,7 +51,30 @@ class GitHub(val context: Context) {
                 .create(GitHubOAuth::class.java)
     }
 
-    fun getToken() = oauth.getToken(code, clientData.id, clientData.secret)
+    fun getToken(code: String) {
+        this.code = code
+        oauth.getToken(this.code, clientData.id, clientData.secret).callback(
+            onResponse = { res ->
+                val result = res?.body()
+                if (result != null) {
+                    Log.d(TAG, "token result: " + result.toString())
+                    storeToken(result.access_token, result.token_type)
+                }
+            },
+            onFailure = { t ->
+                Log.e(TAG, t.toString())
+            }
+        )
+    }
+
+    private fun storeToken(token: String, type: String) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val editor = prefs.edit()
+        editor.putString("token", token)
+        editor.putString("type", type)
+        editor.apply()
+//        Log.d(TAG, "stored token: $token")
+    }
 
     fun openOAuthPage() {
         val customTab = CustomTabsIntent.Builder()
