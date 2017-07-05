@@ -12,6 +12,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -21,6 +22,7 @@ class GitHub(val context: Context) {
 
     val clientData = ClientData(context)
 
+    var api = initApi()
     var oauth = initOAuth()
 
     var code = ""
@@ -36,6 +38,44 @@ class GitHub(val context: Context) {
         Log.d(TAG, "authencated: $authenticated, token: $token")
     }
 
+    // API
+    fun initApi(): GitHubApi {
+        val httpClient =
+                OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                            .addHeader("Authorization", "$tokenType " + token)
+                            .addHeader("Accept", "application/json")
+                            .build()
+                    chain.proceed(request)
+                }.authenticator { route, response ->
+                    response.request().newBuilder()
+                            .addHeader("Authorization", "$tokenType " + token)
+                            .build()
+                }.build()
+        val retrofit = Retrofit.Builder()
+                .baseUrl("https://api.github.com")
+                .client(httpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+        return retrofit.create(GitHubApi::class.java)
+    }
+
+    fun search(query: String, sort: String, order: String) {
+        api.searchRepositories(query, sort, order).callback(
+            onResponse = { res ->
+                val result = res?.body()
+                result?.items?.forEachIndexed { index, repo ->
+                    Log.d(TAG, "$index $repo")
+                }
+            },
+            onFailure = { t ->
+                Log.d(TAG, t.toString())
+            }
+        )
+    }
+
+    // OAuth
     fun initOAuth(): GitHubOAuth {
         val httpClient = OkHttpClient.Builder()
                 .addInterceptor { chain ->
@@ -52,7 +92,22 @@ class GitHub(val context: Context) {
                 .create(GitHubOAuth::class.java)
     }
 
+    fun openOAuthPage() {
+        val customTab = CustomTabsIntent.Builder()
+                .setShowTitle(true).enableUrlBarHiding().build()
+        customTab.launchUrl(context,
+                Uri.parse("https://github.com/login/oauth/authorize?client_id=${clientData.id}"))
+    }
+
     fun getToken(intent: Intent?) {
+        fun storeToken(token: String, type: String) {
+            PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit()
+                    .putString("token", token)
+                    .putString("type", type)
+                    .apply()
+        }
+
         val code = intent?.data?.getQueryParameter("code")
 
         if (code == null) return
@@ -72,21 +127,6 @@ class GitHub(val context: Context) {
         )
     }
 
-    private fun storeToken(token: String, type: String) {
-        PreferenceManager.getDefaultSharedPreferences(context)
-                .edit()
-                .putString("token", token)
-                .putString("type", type)
-                .apply()
-    }
-
-    fun openOAuthPage() {
-        val customTab = CustomTabsIntent.Builder()
-                .setShowTitle(true).enableUrlBarHiding().build()
-        customTab.launchUrl(context,
-                Uri.parse("https://github.com/login/oauth/authorize?client_id=${clientData.id}"))
-    }
-
     inner class ClientData(context: Context) {
         var id: String
         var secret: String
@@ -99,8 +139,29 @@ class GitHub(val context: Context) {
     }
 }
 
-
+data class User(
+    val avatar_url: String,
+    val name: String,
+    val url: String,
+    val login: String
+)
+data class Repo(
+    val full_name: String,
+    val html_url: String,
+    val description: String,
+    val owner: User
+)
+data class SearchResult(val items: List<Repo>)
 data class TokenResult(val access_token: String, val token_type: String)
+
+interface GitHubApi {
+    @GET("search/repositories")
+    fun searchRepositories(
+        @Query("q") query: String,      // search keywords
+        @Query("sort") sort: String,    // [match], starts, forks
+        @Query("order") order: String   // [desc], asc
+    ): Call<SearchResult>
+}
 
 interface GitHubOAuth {
     @POST("login/oauth/access_token")

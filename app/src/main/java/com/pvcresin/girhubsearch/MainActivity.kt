@@ -19,6 +19,11 @@ class MainActivity : AppCompatActivity() {
         (findViewById(R.id.button) as Button).setOnClickListener {
             github.openOAuthPage()
         }
+
+        (findViewById(R.id.button2) as Button).setOnClickListener {
+            github.search("tetris+language:kotlin", "stars", "desc")
+        }
+
     }
 
     override fun onNewIntent(intent: Intent?) {
