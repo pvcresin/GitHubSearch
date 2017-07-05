@@ -5,6 +5,8 @@ import android.net.Uri
 import android.support.customtabs.CustomTabsIntent
 import okhttp3.OkHttpClient
 import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.POST
@@ -65,4 +67,17 @@ interface GitHubOAuth {
         @Query("client_id") clientId: String,
         @Query("client_secret") clientSecret: String
     ): Call<TokenResult>
+}
+
+fun <T> Call<T>.callback(
+        onResponse: (res: Response<T>?) -> Unit,
+        onFailure: (t: Throwable?) -> Unit) {
+    this.enqueue(object : Callback<T> {
+        override fun onResponse(call: Call<T>?, response: Response<T>?) {
+            onResponse.invoke(response)
+        }
+        override fun onFailure(call: Call<T>?, t: Throwable?) {
+            onFailure.invoke(t)
+        }
+    })
 }

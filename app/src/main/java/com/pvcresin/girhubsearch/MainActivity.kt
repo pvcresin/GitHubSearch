@@ -37,14 +37,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getToken() {
-        github.getToken().enqueue(object : Callback<TokenResult> {
-            override fun onResponse(call: Call<TokenResult>?, response: Response<TokenResult>?) {
-                Log.d(TAG, "token result: " + response?.body().toString())
-            }
-            override fun onFailure(call: Call<TokenResult>?, t: Throwable?) {
+        github.getToken().callback(
+            onResponse = { res ->
+                Log.d(TAG, "token result: " + res?.body().toString())
+            },
+            onFailure = { t ->
                 Log.e(TAG, t.toString())
             }
-        })
+        )
     }
 }
 
