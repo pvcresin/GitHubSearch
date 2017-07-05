@@ -1,4 +1,4 @@
-package com.pvcresin.girhubsearch
+package com.pvcresin.githubsearch
 
 import android.content.Context
 import android.content.Intent
@@ -137,6 +137,8 @@ class GitHub(val context: Context) {
             secret = lines[3]
         }
     }
+
+
 }
 
 data class User(

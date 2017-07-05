@@ -1,4 +1,4 @@
-package com.pvcresin.girhubsearch
+package com.pvcresin.githubsearch
 
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
