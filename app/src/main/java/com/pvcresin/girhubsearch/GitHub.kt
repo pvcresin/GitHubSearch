@@ -1,6 +1,7 @@
 package com.pvcresin.girhubsearch
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.preference.PreferenceManager
 import android.support.customtabs.CustomTabsIntent
@@ -51,8 +52,12 @@ class GitHub(val context: Context) {
                 .create(GitHubOAuth::class.java)
     }
 
-    fun getToken(code: String) {
-        this.code = code
+    fun getToken(intent: Intent?) {
+        val code = intent?.data?.getQueryParameter("code")
+
+        if (code == null) return
+        else this.code = code
+
         oauth.getToken(this.code, clientData.id, clientData.secret).callback(
             onResponse = { res ->
                 val result = res?.body()
@@ -68,12 +73,11 @@ class GitHub(val context: Context) {
     }
 
     private fun storeToken(token: String, type: String) {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        val editor = prefs.edit()
-        editor.putString("token", token)
-        editor.putString("type", type)
-        editor.apply()
-//        Log.d(TAG, "stored token: $token")
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString("token", token)
+                .putString("type", type)
+                .apply()
     }
 
     fun openOAuthPage() {
