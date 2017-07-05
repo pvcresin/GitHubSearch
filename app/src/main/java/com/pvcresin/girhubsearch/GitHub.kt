@@ -29,10 +29,10 @@ class GitHub(val context: Context) {
     val tokenType: String
         get() = PreferenceManager.getDefaultSharedPreferences(context).getString("type", "")
     val authenticated: Boolean
-        get() = token.isEmpty()
+        get() = !token.isEmpty()
 
     init {
-        Log.d(TAG, "authencated: $authenticated")
+        Log.d(TAG, "authencated: $authenticated, token: $token")
     }
 
     fun initOAuth(): GitHubOAuth {
