@@ -5,6 +5,9 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
     val TAG = "Main"
@@ -29,6 +32,19 @@ class MainActivity : AppCompatActivity() {
         if (code == null) return
         else github.code = code
         Log.d(TAG, "code ${github.code}")
+
+        getToken()
+    }
+
+    fun getToken() {
+        github.getToken().enqueue(object : Callback<TokenResult> {
+            override fun onResponse(call: Call<TokenResult>?, response: Response<TokenResult>?) {
+                Log.d(TAG, "token result: " + response?.body().toString())
+            }
+            override fun onFailure(call: Call<TokenResult>?, t: Throwable?) {
+                Log.e(TAG, t.toString())
+            }
+        })
     }
 }
 
